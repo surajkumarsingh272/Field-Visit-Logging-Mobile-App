@@ -1,15 +1,15 @@
 import 'dart:io';
+import 'package:shimmer/shimmer.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../data/models/visit_model.dart';
 import 'sync_status_badge.dart';
 
-
 class VisitCard extends StatelessWidget {
   final VisitModel visit;
   final VoidCallback onTap;
 
-  const VisitCard({super.key, required this.visit,  required this.onTap,});
+  const VisitCard({super.key, required this.visit, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -21,15 +21,12 @@ class VisitCard extends StatelessWidget {
           padding: const EdgeInsets.all(12),
           child: Row(
             children: [
-
               _VisitThumbnail(imagePath: visit.imagePath),
               const SizedBox(width: 12),
-
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-
                     Text(
                       visit.farmerName,
                       style: const TextStyle(
@@ -41,7 +38,6 @@ class VisitCard extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 4),
-
                     Row(
                       children: [
                         const Icon(Icons.location_on_outlined,
@@ -61,7 +57,6 @@ class VisitCard extends StatelessWidget {
                       ],
                     ),
                     const SizedBox(height: 6),
-
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -79,7 +74,6 @@ class VisitCard extends StatelessWidget {
                   ],
                 ),
               ),
-
               const Icon(Icons.chevron_right, color: Color(0xFFBDBDBD)),
             ],
           ),
@@ -89,34 +83,64 @@ class VisitCard extends StatelessWidget {
   }
 }
 
-
 class _VisitThumbnail extends StatelessWidget {
   final String imagePath;
-
   const _VisitThumbnail({required this.imagePath});
 
   @override
   Widget build(BuildContext context) {
-    final file = File(imagePath);
-
     return ClipRRect(
       borderRadius: BorderRadius.circular(8),
-      child: file.existsSync()
-          ? Image.file(
-        file,
+      child: _buildImage(),
+    );
+  }
+
+  Widget _buildImage() {
+    if (imagePath.isEmpty) return _placeholder();
+
+    if (imagePath.startsWith('http')) {
+      return Image.network(
+        imagePath,
         width: 72,
         height: 72,
         fit: BoxFit.cover,
-      )
-          : Container(
+        loadingBuilder: (context, child, progress) {
+          if (progress == null) return child;
+          return _shimmer();
+        },
+        errorBuilder: (context, error, stack) => _placeholder(),
+      );
+    }
+
+    final file = File(imagePath);
+    if (file.existsSync()) {
+      return Image.file(file, width: 72, height: 72, fit: BoxFit.cover);
+    }
+
+    return _placeholder();
+  }
+
+  Widget _shimmer() {
+    return Shimmer.fromColors(
+      baseColor: const Color(0xFFE0E0E0),
+      highlightColor: const Color(0xFFF5F5F5),
+      child: Container(
         width: 72,
         height: 72,
-        color: const Color(0xFFE8F5E9),
-        child: const Icon(
-          Icons.image_not_supported_outlined,
-          color: Color(0xFF81C784),
-          size: 32,
-        ),
+        color: Colors.white,
+      ),
+    );
+  }
+
+  Widget _placeholder() {
+    return Container(
+      width: 72,
+      height: 72,
+      color: const Color(0xFFE8F5E9),
+      child: const Icon(
+        Icons.image_not_supported_outlined,
+        color: Color(0xFF81C784),
+        size: 32,
       ),
     );
   }

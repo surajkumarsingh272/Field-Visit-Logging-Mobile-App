@@ -5,7 +5,6 @@ import 'package:provider/provider.dart';
 import 'core/router/app_router.dart';
 import 'core/theme/app_theme.dart';
 import 'data/repositories/visit_repository.dart';
-import 'services/sync_service.dart';
 import 'view_model/visit_auth_view_model.dart';
 import 'view_model/visit_list_view_model.dart';
 
@@ -13,9 +12,6 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   final visitRepository = VisitRepository();
-  await visitRepository.syncPendingVisits();
-  final syncService = SyncService();
-  syncService.startListening();
 
   runApp(FieldVisitLoggerApp(visitRepository: visitRepository));
 }

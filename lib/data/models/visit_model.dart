@@ -1,4 +1,3 @@
-
 class VisitModel {
   final String id;
   final String farmerName;
@@ -39,14 +38,14 @@ class VisitModel {
 
   factory VisitModel.fromJson(Map<String, dynamic> json) => VisitModel(
     id: json['id'],
-    farmerName: json['farmerName'],
-    village: json['village'],
-    cropType: json['cropType'],
+    farmerName: json['farmerName'] ?? json['farmer_name'] ?? '',
+    village: json['village'] ?? '',
+    cropType: json['cropType'] ?? json['crop_type'] ?? '',
     notes: json['notes'],
-    imagePath: json['imagePath'],
-    visitDate: DateTime.parse(json['visitDate']),
-    latitude: json['latitude'],
-    longitude: json['longitude'],
+    imagePath: json['imagePath'] ?? json['image_path'] ?? '',
+    visitDate: DateTime.parse(json['visitDate'] ?? json['visit_date']),
+    latitude: (json['latitude'] as num).toDouble(),
+    longitude: (json['longitude'] as num).toDouble(),
     isSynced: json['isSynced'] == 1,
   );
 

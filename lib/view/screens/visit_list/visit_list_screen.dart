@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import 'package:shimmer/shimmer.dart';
 import '../../../view_model/visit_list_view_model.dart';
 import '../../widgets/visit_card.dart';
 
@@ -9,16 +10,14 @@ class VisitListScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final VisitListViewModel visitListViewModel =
-    context.watch<VisitListViewModel>();
+    final VisitListViewModel vm = context.watch<VisitListViewModel>();
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F5),
       appBar: AppBar(
         title: const Text('Field Visits'),
         actions: [
-
-          if (visitListViewModel.isSyncing)
+          if (vm.isSyncing)
             const Padding(
               padding: EdgeInsets.symmetric(horizontal: 16),
               child: Center(
@@ -36,24 +35,20 @@ class VisitListScreen extends StatelessWidget {
             IconButton(
               tooltip: 'Refresh',
               icon: const Icon(Icons.refresh_rounded),
-              onPressed: visitListViewModel.loadVisits,
+              onPressed: vm.loadVisits,
             ),
         ],
       ),
-
-
       body: RefreshIndicator(
-        onRefresh: visitListViewModel.loadVisits,
+        onRefresh: vm.loadVisits,
         color: const Color(0xFF2E7D32),
-        child: _buildBody(context, visitListViewModel),
+        child: _buildBody(context, vm),
       ),
-
-
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () async {
           final wasAdded = await context.push('/visit-add');
           if (wasAdded == true && context.mounted) {
-            visitListViewModel.loadVisits();
+            vm.loadVisits();
           }
         },
         icon: const Icon(Icons.add),
@@ -62,14 +57,12 @@ class VisitListScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildBody(
-      BuildContext context, VisitListViewModel visitListViewModel) {
-
-    if (visitListViewModel.isLoading) {
-      return const Center(child: CircularProgressIndicator());
+  Widget _buildBody(BuildContext context, VisitListViewModel vm) {
+    if (vm.isLoading) {
+      return _ShimmerList();
     }
 
-    if (visitListViewModel.errorMessage != null) {
+    if (vm.errorMessage != null) {
       return Center(
         child: Padding(
           padding: const EdgeInsets.all(32),
@@ -83,18 +76,17 @@ class VisitListScreen extends StatelessWidget {
                   color: Colors.red.withOpacity(0.10),
                   borderRadius: BorderRadius.circular(20),
                 ),
-                child: const Icon(Icons.error_outline,
-                    size: 36, color: Colors.red),
+                child: const Icon(Icons.error_outline, size: 36, color: Colors.red),
               ),
               const SizedBox(height: 16),
               Text(
-                visitListViewModel.errorMessage!,
+                vm.errorMessage!,
                 style: const TextStyle(color: Colors.red, fontSize: 14),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 20),
               ElevatedButton.icon(
-                onPressed: visitListViewModel.loadVisits,
+                onPressed: vm.loadVisits,
                 icon: const Icon(Icons.refresh),
                 label: const Text('Retry'),
               ),
@@ -104,14 +96,13 @@ class VisitListScreen extends StatelessWidget {
       );
     }
 
-    if (visitListViewModel.visits.isEmpty) {
+    if (vm.visits.isEmpty) {
       return ListView(
         children: [
           const SizedBox(height: 80),
           Center(
             child: Column(
               children: [
-
                 Container(
                   width: 100,
                   height: 100,
@@ -159,7 +150,7 @@ class VisitListScreen extends StatelessWidget {
           child: Row(
             children: [
               Text(
-                '${visitListViewModel.visits.length} Visit${visitListViewModel.visits.length > 1 ? 's' : ''} Recorded',
+                '${vm.visits.length} Visit${vm.visits.length > 1 ? 's' : ''} Recorded',
                 style: const TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
@@ -168,20 +159,17 @@ class VisitListScreen extends StatelessWidget {
               ),
               const Spacer(),
               _PendingSyncBadge(
-                pendingCount: visitListViewModel.visits
-                    .where((v) => !v.isSynced)
-                    .length,
+                pendingCount: vm.visits.where((v) => !v.isSynced).length,
               ),
             ],
           ),
         ),
-
         Expanded(
           child: ListView.builder(
             padding: const EdgeInsets.only(top: 4, bottom: 80),
-            itemCount: visitListViewModel.visits.length,
+            itemCount: vm.visits.length,
             itemBuilder: (context, index) {
-              final visit = visitListViewModel.visits[index];
+              final visit = vm.visits[index];
               return VisitCard(
                 visit: visit,
                 onTap: () => context.push('/visit-detail', extra: visit),
@@ -190,6 +178,76 @@ class VisitListScreen extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+class _ShimmerList extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return ListView.builder(
+      padding: const EdgeInsets.all(12),
+      itemCount: 5,
+      itemBuilder: (context, index) {
+        return Shimmer.fromColors(
+          baseColor: const Color(0xFFE0E0E0),
+          highlightColor: const Color(0xFFF5F5F5),
+          child: Container(
+            margin: const EdgeInsets.only(bottom: 12),
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 72,
+                  height: 72,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        height: 16,
+                        width: double.infinity,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Container(
+                        height: 12,
+                        width: 150,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Container(
+                        height: 12,
+                        width: 100,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }

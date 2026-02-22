@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:shimmer/shimmer.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:intl/intl.dart';
@@ -22,12 +23,14 @@ class VisitDetailScreen extends StatelessWidget {
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 16),
-            child: Center(child: SyncStatusBadge(
-              isSynced: visit.isSynced,
-              textColor: Colors.white,
-              borderColor: Colors.white,
-              backgroundColor: Colors.white.withOpacity(0.15),
-            )),
+            child: Center(
+              child: SyncStatusBadge(
+                isSynced: visit.isSynced,
+                textColor: Colors.white,
+                borderColor: Colors.white,
+                backgroundColor: Colors.white.withOpacity(0.15),
+              ),
+            ),
           ),
         ],
       ),
@@ -35,7 +38,6 @@ class VisitDetailScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-
             _VisitPhoto(imagePath: visit.imagePath),
 
             Container(
@@ -55,7 +57,6 @@ class VisitDetailScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-
                   Text(
                     visit.farmerName,
                     style: const TextStyle(
@@ -65,8 +66,6 @@ class VisitDetailScreen extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 6),
-
-
                   Row(
                     children: [
                       const Icon(Icons.calendar_today_outlined,
@@ -85,8 +84,6 @@ class VisitDetailScreen extends StatelessWidget {
                   const SizedBox(height: 20),
                   const Divider(height: 1, color: Color(0xFFF0F0F0)),
                   const SizedBox(height: 16),
-
-
                   DetailRow(
                     icon: Icons.location_city_outlined,
                     label: 'Village',
@@ -108,7 +105,6 @@ class VisitDetailScreen extends StatelessWidget {
               ),
             ),
 
-
             Container(
               margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
               decoration: BoxDecoration(
@@ -125,7 +121,6 @@ class VisitDetailScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-
                   Padding(
                     padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
                     child: Row(
@@ -152,14 +147,10 @@ class VisitDetailScreen extends StatelessWidget {
                       ],
                     ),
                   ),
-
-
                   _LiveMapView(
                     latitude: visit.latitude,
                     longitude: visit.longitude,
                   ),
-
-
                   Padding(
                     padding: const EdgeInsets.all(14),
                     child: Container(
@@ -206,15 +197,45 @@ class _VisitPhoto extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (imagePath.isEmpty) return _placeholder();
+
+    if (imagePath.startsWith('http')) {
+      return Image.network(
+        imagePath,
+        width: double.infinity,
+        height: 250,
+        fit: BoxFit.cover,
+        loadingBuilder: (context, child, progress) {
+          if (progress == null) return child;
+          return Shimmer.fromColors(
+            baseColor: const Color(0xFFE0E0E0),
+            highlightColor: const Color(0xFFF5F5F5),
+            child: Container(
+              width: double.infinity,
+              height: 250,
+              color: Colors.white,
+            ),
+          );
+        },
+        errorBuilder: (context, error, stack) => _placeholder(),
+      );
+    }
+
     final file = File(imagePath);
-    return file.existsSync()
-        ? Image.file(
-      file,
-      width: double.infinity,
-      height: 250,
-      fit: BoxFit.cover,
-    )
-        : Container(
+    if (file.existsSync()) {
+      return Image.file(
+        file,
+        width: double.infinity,
+        height: 250,
+        fit: BoxFit.cover,
+      );
+    }
+
+    return _placeholder();
+  }
+
+  Widget _placeholder() {
+    return Container(
       width: double.infinity,
       height: 250,
       color: const Color(0xFFE8F5E9),
@@ -258,8 +279,7 @@ class _LiveMapView extends StatelessWidget {
             minZoom: 5,
             maxZoom: 18,
             interactionOptions: const InteractionOptions(
-              flags: InteractiveFlag.pinchZoom |
-              InteractiveFlag.doubleTapZoom,
+              flags: InteractiveFlag.pinchZoom | InteractiveFlag.doubleTapZoom,
             ),
           ),
           children: [
@@ -269,7 +289,6 @@ class _LiveMapView extends StatelessWidget {
               subdomains: const ['a', 'b', 'c'],
               userAgentPackageName: 'com.example.field_visit_logger',
             ),
-
             MarkerLayer(
               markers: [
                 Marker(

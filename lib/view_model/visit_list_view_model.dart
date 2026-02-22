@@ -77,12 +77,13 @@ class VisitListViewModel extends ChangeNotifier {
 
   void _listenToConnectivity() {
     _connectivitySubscription =
-        Connectivity().onConnectivityChanged.listen((results) {
+        Connectivity().onConnectivityChanged.listen((results) async {
           final hasInternet = results.isNotEmpty &&
               !results.contains(ConnectivityResult.none);
 
           if (hasInternet) {
-            _syncAndReload();
+            await Future.delayed(const Duration(seconds: 2));
+            await _syncAndReload();
           }
         });
   }

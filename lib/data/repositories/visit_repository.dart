@@ -28,21 +28,39 @@ class VisitRepository {
   }
 
   Future<List<VisitModel>> getAllVisits() async {
-    final localVisits = await _dbHelper.getVisits();
-    if (localVisits.isNotEmpty) return localVisits;
-
     try {
-      final remoteData = await _apiService.getVisits();
-      for (final json in remoteData) {
-        final visit = VisitModel.fromJson(json);
-        visit.isSynced = true;
-        await _dbHelper.insertVisit(visit);
+      final localVisits = await _dbHelper.getVisits();
+      if (localVisits.isNotEmpty) return localVisits;
+
+      final connectivity = await Connectivity().checkConnectivity();
+      final hasInternet = !connectivity.contains(ConnectivityResult.none);
+      if (!hasInternet) return [];
+
+      try {
+        final remoteData = await _apiService.getVisits();
+        for (final json in remoteData) {
+          final visit = VisitModel(
+            id: json['id'],
+            farmerName: json['farmer_name'] ?? '',
+            village: json['village'] ?? '',
+            cropType: json['crop_type'] ?? '',
+            notes: json['notes'],
+            imagePath: json['image_url'] ?? (json['image_path'] != null ? 'https://visitors.edugaondev.com${json["image_path"]}' : ''),
+            visitDate: DateTime.parse(json['visit_date']),
+            latitude: (json['latitude'] as num).toDouble(),
+            longitude: (json['longitude'] as num).toDouble(),
+            isSynced: true,
+          );
+          await _dbHelper.insertVisit(visit);
+        }
+      } on ApiException {
+        return [];
       }
-    } on ApiException {
+
+      return await _dbHelper.getVisits();
+    } catch (e) {
       return [];
     }
-
-    return await _dbHelper.getVisits();
   }
 
   Future<void> updateVisit(VisitModel visit) async {
